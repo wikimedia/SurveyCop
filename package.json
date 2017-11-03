@@ -1,0 +1,25 @@
+{
+  "name": "wikipageswatcher",
+  "version": "1.0.0",
+  "description": "A Node application to monitor the Wikimedia Foundation's 2017 Community Wishlist Survey.",
+  "main": "watch.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MusikAnimal/WikiPagesWatcher.git"
+  },
+  "author": "MusikAnimal",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/MusikAnimal/WikiPagesWatcher/issues"
+  },
+  "homepage": "https://github.com/MusikAnimal/WikiPagesWatcher#readme",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "eventsource": "^1.0.5",
+    "minimist": "^1.2.0",
+    "mwbot": "^1.0.10"
+  }
+}

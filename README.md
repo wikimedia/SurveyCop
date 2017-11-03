@@ -1,2 +1,2 @@
 # WikiPagesWatcher
-A Node application to monitor a set of pages on a wiki and run other scripts
+A Node application to monitor the Wikimedia Foundation's 2017 Community Wishlist Survey.
