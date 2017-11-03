@@ -83,29 +83,32 @@ function processEvent(data)
         return console.log(`Edit in invalid category -- ${fullTitle}`.yellow);
     }
 
-    if (data.type === 'new') {
-        console.log(`New proposal added (${category}): `.green + proposal.blue);
-        transcludeProposal(category, proposal);
-    } else if (data.type === 'log' && data.log_type === 'move') {
-        const [newFullTitle, newCategory, newProposal] = getCategoryAndProposal(data.log_params.target);
-        console.log('Proposal moved: '.magenta + `${proposal.blue} (${category.blue}) ` +
-            `~> ${newProposal.blue} (${newCategory.blue})`);
+    // Refresh edit token.
+    bot.getEditToken().then(() => {
+        if (data.type === 'new') {
+            console.log(`New proposal added (${category}): `.green + proposal.blue);
+            transcludeProposal(category, proposal);
+        } else if (data.type === 'log' && data.log_type === 'move') {
+            const [newFullTitle, newCategory, newProposal] = getCategoryAndProposal(data.log_params.target);
+            console.log('Proposal moved: '.magenta + `${proposal.blue} (${category.blue}) ` +
+                `~> ${newProposal.blue} (${newCategory.blue})`);
 
-        const editSummary = `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`;
+            const editSummary = `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`;
 
-        // Remove from old category.
-        untranscludeProposal(category, proposal, editSummary).then(() => {
-            // Add to new one.
-            transcludeProposal(newCategory, proposal);
-        });
-    } else if (data.type === 'log' && data.log_type === 'delete') {
-        console.log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
-        untranscludeProposal(
-            category,
-            proposal,
-            `Proposal "[[${fullTitle}|${proposal}]]" was deleted.`
-        );
-    }
+            // Remove from old category.
+            untranscludeProposal(category, proposal, editSummary).then(() => {
+                // Add to new one.
+                transcludeProposal(newCategory, proposal);
+            });
+        } else if (data.type === 'log' && data.log_type === 'delete') {
+            console.log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
+            untranscludeProposal(
+                category,
+                proposal,
+                `Proposal "[[${fullTitle}|${proposal}]]" was deleted.`
+            );
+        }
+    });
 }
 
 function getCategoryAndProposal(pageTitle)
