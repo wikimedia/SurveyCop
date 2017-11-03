@@ -13,6 +13,13 @@ const credentials = require('./credentials');
 let botConfig;
 let bot = new MWBot();
 
+bot.setGlobalRequestOptions({
+    headers: {
+        'User-Agent': 'Community Tech bot on Node.js',
+        timeout: 8000
+    },
+});
+
 // Connect to API.
 console.log(`Connecting to the API`);
 
@@ -84,16 +91,20 @@ function processEvent(data)
         console.log('Proposal moved: '.magenta + `${proposal.blue} (${category.blue}) ` +
             `~> ${newProposal.blue} (${newCategory.blue})`);
 
-        const oldCategoryPath = `${botConfig.survey_root}/${category}`,
-            newCategoryPath = `${botConfig.survey_root}/${newCategory}`;
-        getContent(oldCategoryPath).then(oldCategoryContent => {
-            bot.update(
-                oldCategoryPath,
-                oldCategoryContent.replace(`\n{{:${fullTitle}}}`, ''),
-                `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`
-            );
+        const editSummary = `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`;
+
+        // Remove from old category.
+        untranscludeProposal(category, proposal, editSummary).then(() => {
+            // Add to new one.
             transcludeProposal(newCategory, proposal);
         });
+    } else if (data.type === 'log' && data.log_type === 'delete') {
+        console.log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
+        untranscludeProposal(
+            category,
+            proposal,
+            `Proposal "[[${fullTitle}|${proposal}]]" was deleted.`
+        );
     }
 }
 
@@ -102,21 +113,39 @@ function getCategoryAndProposal(pageTitle)
     return /.*?\/(.*?)\/(.*?)$/.exec(pageTitle);
 }
 
+function untranscludeProposal(category, proposal, editSummary)
+{
+    const categoryPath = `${botConfig.survey_root}/${category}`;
+    const fullTitle = `${categoryPath}/${proposal}`;
+
+    return getContent(categoryPath).then(oldCategoryContent => {
+        bot.update(
+            categoryPath,
+            oldCategoryContent.replace(`\n{{:${fullTitle}}}`, ''),
+            editSummary
+        );
+    });
+}
+
 function transcludeProposal(category, proposal)
 {
     const categoryPage = `${botConfig.survey_root}/${category}`;
     console.log('Transcluding proposal...'.gray);
 
     getContent(categoryPage).then(content => {
+        const newRow = `{{:${categoryPage}/${proposal}}}`;
+        if (content.includes(newRow)) {
+            return console.log('-- already transcluded'.gray);
+        }
         content = content.trim() + `\n{{:${categoryPage}/${proposal}}}`;
 
-        bot.update(categoryPage, content, `Adding proposal [[${categoryPage}/${proposal}|${proposal}]]`);
+        bot.update(categoryPage, content, `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`);
     });
 }
 
 function getContent(pageTitle)
 {
-    return bot.read(pageTitle, {timeout: 8000}).then(response => {
+    return bot.read(pageTitle).then(response => {
         const pageId = Object.keys(response.query.pages);
         return response.query.pages[pageId].revisions[0]['*'];
     }).catch((err) => {
