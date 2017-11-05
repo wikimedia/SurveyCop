@@ -23,7 +23,7 @@ bot.setGlobalRequestOptions({
 });
 
 // Connect to replicas.
-console.log('Establishing connection to the replicas'.gray);
+log('Establishing connection to the replicas'.gray);
 var connection = mysql.createConnection({
   host     : credentials.db_host,
   port     : credentials.db_port,
@@ -34,31 +34,31 @@ var connection = mysql.createConnection({
 connection.connect();
 
 // Connect to API.
-console.log('Connecting to the API'.gray);
+log('Connecting to the API'.gray);
 
 bot.loginGetEditToken({
     apiUrl: apiUrl,
     username: credentials.username,
     password: credentials.password
 }).then(() => {
-    console.log('API connection successful'.green);
-    console.log('Loading config...'.gray);
+    log('API connection successful'.green);
+    log('Loading config...'.gray);
 
     getContent('User:Community Tech bot/WishlistSurvey/config').then(content => {
         botConfig = JSON.parse(content);
-        console.log('Bot configuration loaded.'.green);
+        log('Bot configuration loaded.'.green);
         buildCache();
     }).catch((err) => {
-        console.log(`Failed to load config! Error:\n\t${err}`.red);
+        log(`Failed to load config! Error:\n\t${err}`.red);
     });
 }).catch((err) => {
-    console.log(`Failed to connect to the API! Error:\n\t${err}`.red);
+    log(`Failed to connect to the API! Error:\n\t${err}`.red);
 });
 
 // Build and cache page IDs of the Categories.
 function buildCache()
 {
-    console.log('Building cache of page IDs');
+    log('Building cache of page IDs');
     let count = 0;
     botConfig.categories.forEach(category => {
         const categoryPath = `${botConfig.survey_root}/${category}`.replace(/ /g, '_');
@@ -83,11 +83,11 @@ function buildCache()
 
 function watchSurvey()
 {
-    console.log(`Connecting to EventStreams at ${url}`.gray);
+    log(`Connecting to EventStreams at ${url}`.gray);
     const eventSource = new EventSource(url);
 
     eventSource.onopen = event => {
-        console.log('--- Opened connection and watching for changes...'.green);
+        log('--- Opened connection and watching for changes...'.green);
     };
 
     eventSource.onerror = event => {
@@ -118,17 +118,17 @@ function processEvent(data)
     const validCategory = botConfig.categories.includes(category);
 
     if (!validCategory) {
-        return console.log(`Edit in invalid category -- ${fullTitle}`.yellow);
+        return log(`Edit in invalid category -- ${fullTitle}`.yellow);
     }
 
     // Refresh edit token.
     bot.getEditToken().then(() => {
         if (data.type === 'new') {
-            console.log(`New proposal added (${category}): `.green + proposal.blue);
+            log(`New proposal added (${category}): `.green + proposal.blue);
             transcludeProposal(category, proposal);
         } else if (data.type === 'log' && data.log_type === 'move') {
             const [newFullTitle, newCategory, newProposal] = getCategoryAndProposal(data.log_params.target);
-            console.log('Proposal moved: '.magenta + `${proposal.blue} (${category.blue}) ` +
+            log('Proposal moved: '.magenta + `${proposal.blue} (${category.blue}) ` +
                 `~> ${newProposal.blue} (${newCategory.blue})`);
 
             const editSummary = `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`;
@@ -139,7 +139,7 @@ function processEvent(data)
                 transcludeProposal(newCategory, proposal);
             });
         } else if (data.type === 'log' && data.log_type === 'delete') {
-            console.log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
+            log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
             untranscludeProposal(
                 category,
                 proposal,
@@ -169,12 +169,12 @@ function untranscludeProposal(category, proposal, editSummary)
 function transcludeProposal(category, proposal)
 {
     const categoryPage = `${botConfig.survey_root}/${category}`;
-    console.log('Transcluding proposal...'.gray);
+    log('Transcluding proposal...'.gray);
 
     getContent(categoryPage).then(content => {
         const newRow = `{{:${categoryPage}/${proposal}}}`;
         if (content.includes(newRow)) {
-            return console.log('-- already transcluded'.gray);
+            return log('-- already transcluded'.gray);
         }
         content = content.trim() + `\n{{:${categoryPage}/${proposal}}}`;
 
@@ -189,7 +189,7 @@ function updateProposalCount(category, content)
 {
     const regex = new RegExp(`{{:${botConfig.survey_root}.*}}`, 'g');
     const count = content.match(regex).length;
-    console.log(`-- Updating proposal count for ${category}`.gray);
+    log(`-- Updating proposal count for ${category}`.gray);
     bot.edit(
         `${botConfig.survey_root}/Proposal counts/${category}`,
         count,
@@ -199,7 +199,7 @@ function updateProposalCount(category, content)
 
 function updateEditorCount(category)
 {
-    console.log(`-- Updating editor count for ${category}`.gray);
+    log(`-- Updating editor count for ${category}`.gray);
     const underscoredPath = `${botConfig.survey_root}/${category}/`.replace(/ /g, '_');
     connection.query(
         `SELECT COUNT(DISTINCT(rev_user_text)) AS count
@@ -227,6 +227,12 @@ function getContent(pageTitle)
         const pageId = Object.keys(response.query.pages);
         return response.query.pages[pageId].revisions[0]['*'];
     }).catch((err) => {
-        console.log(`Failed to read page ${pageTitle}! Error:\n\t${err}`.red);
+        log(`Failed to read page ${pageTitle}! Error:\n\t${err}`.red);
     });
+}
+
+function log(message)
+{
+    const datestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    console.log(`${datestamp}: ${message}`);
 }
