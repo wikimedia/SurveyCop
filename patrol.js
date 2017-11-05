@@ -136,8 +136,8 @@ function processEvent(data)
 
             // Remove from old category.
             untranscludeProposal(category, proposal, editSummary).then(() => {
-                // Add to new one.
-                transcludeProposal(newCategory, proposal);
+                // Correct Proposal header, if needed, then transclude on new category.
+                correctProposalHeaderAndTransclude(newCategory, newProposal);
             });
         } else if (data.type === 'log' && data.log_type === 'delete') {
             log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
@@ -172,7 +172,7 @@ function transcludeProposal(category, proposal)
     const categoryPage = `${botConfig.survey_root}/${category}`;
     log('Transcluding proposal...'.gray);
 
-    getContent(categoryPage).then(content => {
+    return getContent(categoryPage).then(content => {
         const newRow = `{{:${categoryPage}/${proposal}}}`;
         if (content.includes(newRow)) {
             return log('-- already transcluded'.gray);
@@ -182,7 +182,36 @@ function transcludeProposal(category, proposal)
         bot.update(categoryPage, content, `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`);
 
         updateProposalCount(category, content);
-        updateEditorCount(category);
+        // updateEditorCount(category);
+    });
+}
+
+function correctProposalHeaderAndTransclude(category, proposal)
+{
+    const proposalPath = `${botConfig.survey_root}/${category}/${proposal}`;
+
+    getContent(proposalPath).then(content => {
+        if (content.includes(`{{:Community Wishlist Survey/Proposal header|1=${proposal}}}`)) {
+            // Proposal header is valid, so just need to transclude on new category.
+            transcludeProposal(category, proposal);
+        } else {
+            log(`-- Correcting proposal header template for ${proposal}`.gray);
+            const captures = content.match(/^{{:Community Wishlist Survey\/Proposal header\|1\=(.*?)}}/);
+            if (captures) {
+                content = content.replace(
+                    `{{:Community Wishlist Survey/Proposal header|1=${captures[1]}}}`,
+                    `{{:Community Wishlist Survey/Proposal header|1=${proposal}}}`
+                );
+                bot.edit(
+                    proposalPath,
+                    content,
+                    `Correcting Proposal header template for [[${proposalPath}|${proposal}]]`
+                ).then(() => {
+                    // Transclude on new category.
+                    transcludeProposal(category, proposal);
+                });
+            }
+        }
     });
 }
 
