@@ -1,0 +1,30 @@
+---
+# Run community-tech-bot SurveyCop on kubernetes
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: community-tech-tools.bot
+  namespace: community-tech-tools
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: community-tech-tools.bot
+    spec:
+      containers:
+        - name: bot
+          image: docker-registry.tools.wmflabs.org/toollabs-nodejs-base:latest
+          command: [ "/data/project/community-tech-tools/SurveyCop/patrol.js" ]
+          workingDir: /data/project/community-tech-tools/SurveyCop
+          env:
+            - name: HOME
+              value: /data/project/community-tech-tools/SurveyCop
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: home
+              mountPath: /data/project/community-tech-tools/SurveyCop
+      volumes:
+        - name: home
+          hostPath:
+            path: /data/project/community-tech-tools/SurveyCop
