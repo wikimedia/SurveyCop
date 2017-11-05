@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const apiUrl = 'https://meta.wikimedia.org/w/api.php';
 
 // Dependencies.
