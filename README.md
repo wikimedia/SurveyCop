@@ -1,4 +1,4 @@
-# WikiPagesWatcher
+# SurveyCop
 A Node application to monitor the Wikimedia Foundation's 2017 Community Wishlist Survey.
 
 ## Installation ##
@@ -8,7 +8,7 @@ A Node application to monitor the Wikimedia Foundation's 2017 Community Wishlist
 ## Usage ##
 
 ### Local ###
-Use `node patrol.js` to see the live feed, or `nohup node patrol.js &` to run it in the background.
+Use `node patrol.js` to see the live feed, or `nohup node patrol.js &` to run it in the background (logs to `nohup.out`).
 
 ### Toolforge ###
 `kubectl create -f /data/project/community-tech-tools/SurveyCop/deployment.yaml`
