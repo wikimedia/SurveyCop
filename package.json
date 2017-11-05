@@ -21,6 +21,6 @@
     "eventsource": "^1.0.5",
     "minimist": "^1.2.0",
     "mwbot": "^1.0.10",
-    "mysql": "github:mysqljs/mysql"
+    "mysql": "mysqljs/mysql"
   }
 }
