@@ -15,6 +15,7 @@ const credentials = require('./credentials');
 let botConfig;
 let bot = new MWBot();
 let pageIds = {}; // For the categories.
+let connection; // MySQL connection.
 
 bot.setGlobalRequestOptions({
     headers: {
@@ -22,17 +23,6 @@ bot.setGlobalRequestOptions({
         timeout: 8000
     },
 });
-
-// Connect to replicas.
-log('Establishing connection to the replicas'.gray);
-var connection = mysql.createConnection({
-  host     : credentials.db_host,
-  port     : credentials.db_port,
-  user     : credentials.db_user,
-  password : credentials.db_password,
-  database : credentials.db_database
-});
-connection.connect();
 
 // Connect to API.
 log('Connecting to the API'.gray);
@@ -59,7 +49,19 @@ bot.loginGetEditToken({
 // Build and cache page IDs of the Categories.
 function buildCache()
 {
-    log('Building cache of page IDs');
+    log('Building cache of page IDs'.gray);
+
+    // Connect to replicas.
+    log('Establishing connection to the replicas'.gray);
+    connection = mysql.createConnection({
+      host     : credentials.db_host,
+      port     : credentials.db_port,
+      user     : credentials.db_user,
+      password : credentials.db_password,
+      database : credentials.db_database
+    });
+    connection.connect();
+
     let count = 0;
     botConfig.categories.forEach(category => {
         const categoryPath = `${botConfig.survey_root}/${category}`.replace(/ /g, '_');
@@ -76,6 +78,7 @@ function buildCache()
 
                 if (++count === botConfig.categories.length) {
                     watchSurvey();
+                    connection.end();
                 }
             }
         );
@@ -232,29 +235,29 @@ function updateProposalCount(category, content)
     );
 }
 
-function updateEditorCount(category)
-{
-    log(`-- Updating editor count for ${category}`.gray);
-    const underscoredPath = `${botConfig.survey_root}/${category}/`.replace(/ /g, '_');
-    connection.query(
-        `SELECT COUNT(DISTINCT(rev_user_text)) AS count
-         FROM revision_userindex
-         WHERE rev_page = ${pageIds[category]}`,
-        function (error, results, fields) {
-            if (error) {
-                throw error;
-            }
+// function updateEditorCount(category)
+// {
+//     log(`-- Updating editor count for ${category}`.gray);
+//     const underscoredPath = `${botConfig.survey_root}/${category}/`.replace(/ /g, '_');
+//     connection.query(
+//         `SELECT COUNT(DISTINCT(rev_user_text)) AS count
+//          FROM revision_userindex
+//          WHERE rev_page = ${pageIds[category]}`,
+//         function (error, results, fields) {
+//             if (error) {
+//                 throw error;
+//             }
 
-            const count = results[0].count;
+//             const count = results[0].count;
 
-            bot.edit(
-                `${botConfig.survey_root}/Editor counts/${category}`,
-                count,
-                `Updating editor count for [[${botConfig.survey_root}/${category}|${category}]] (${count})`
-            );
-        }
-    );
-}
+//             bot.edit(
+//                 `${botConfig.survey_root}/Editor counts/${category}`,
+//                 count,
+//                 `Updating editor count for [[${botConfig.survey_root}/${category}|${category}]] (${count})`
+//             );
+//         }
+//     );
+// }
 
 function getContent(pageTitle)
 {
