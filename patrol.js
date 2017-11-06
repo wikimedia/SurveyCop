@@ -119,7 +119,7 @@ function processEvent(data)
 
     const [fullTitle, category, proposal] = getCategoryAndProposal(data.title);
 
-    const validCategory = botConfig.categories.includes(category);
+    const validCategory = botConfig.categories.includes(category).concat(['Untranslated']);
 
     if (!validCategory) {
         return log(`Edit in invalid category -- ${fullTitle}`.yellow);
@@ -165,9 +165,11 @@ function untranscludeProposal(category, proposal, editSummary)
 
     return getContent(categoryPath).then(content => {
         content = content.replace(`\n{{:${fullTitle}}}`, '');
-        updateProposalCount(category, content).then(() => {
-            bot.update(categoryPath, content, editSummary);
-        });
+        if (category !== 'Untranslated') {
+            updateProposalCount(category, content).then(() => {
+                bot.update(categoryPath, content, editSummary);
+            });
+        }
     });
 }
 
@@ -184,13 +186,15 @@ function transcludeProposal(category, proposal)
         content = content.trim() + `\n{{:${categoryPage}/${proposal}}}`;
 
         // updateEditorCount(category);
-        updateProposalCount(category, content).then(() => {
-            bot.update(
-                categoryPage,
-                content,
-                `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`
-            );
-        });
+        if (category !== 'Untranslated') {
+            updateProposalCount(category, content).then(() => {
+                bot.update(
+                    categoryPage,
+                    content,
+                    `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`
+                );
+            });
+        }
     });
 }
 
