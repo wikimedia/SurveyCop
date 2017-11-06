@@ -223,7 +223,7 @@ function correctProposalHeaderAndTransclude(category, proposal)
 function updateProposalCount(category, content)
 {
     const regex = new RegExp(`{{:${botConfig.survey_root}.*}}`, 'g');
-    const count = content.match(regex).length;
+    const count = content.match(regex) ? content.match(regex).length : 0;
     log(`-- Updating proposal count for ${category}`.gray);
     return bot.edit(
         `${botConfig.survey_root}/Proposal counts/${category}`,
