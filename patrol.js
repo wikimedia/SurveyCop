@@ -162,8 +162,9 @@ function untranscludeProposal(category, proposal, editSummary)
 
     return getContent(categoryPath).then(content => {
         content = content.replace(`\n{{:${fullTitle}}}`, '');
-        bot.update(categoryPath, content, editSummary);
-        updateProposalCount(category, content);
+        updateProposalCount(category, content).then(() => {
+            bot.update(categoryPath, content, editSummary);
+        });
     });
 }
 
@@ -179,10 +180,14 @@ function transcludeProposal(category, proposal)
         }
         content = content.trim() + `\n{{:${categoryPage}/${proposal}}}`;
 
-        bot.update(categoryPage, content, `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`);
-
-        updateProposalCount(category, content);
         // updateEditorCount(category);
+        updateProposalCount(category, content).then(() => {
+            bot.update(
+                categoryPage,
+                content,
+                `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`
+            );
+        });
     });
 }
 
@@ -220,7 +225,7 @@ function updateProposalCount(category, content)
     const regex = new RegExp(`{{:${botConfig.survey_root}.*}}`, 'g');
     const count = content.match(regex).length;
     log(`-- Updating proposal count for ${category}`.gray);
-    bot.edit(
+    return bot.edit(
         `${botConfig.survey_root}/Proposal counts/${category}`,
         count,
         `Updating proposal count for [[${botConfig.survey_root}/${category}|${category}]] (${count})`
