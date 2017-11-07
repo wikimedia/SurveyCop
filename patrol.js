@@ -46,25 +46,26 @@ bot.login({
     log(`Failed to connect to the API! Error:\n\t${err}`.red);
 });
 
-function lazyEvalMemo(fn)
-{
-    let args = arguments;
-    let result;
-    const lazyEval = fn.bind.apply(fn, args);
-    return () => {
-        if (result) {
-            return result;
-        }
-        result = lazyEval();
-        return result;
-    }
-}
+// function lazyEvalMemo(fn)
+// {
+//     let args = arguments;
+//     let result;
+//     const lazyEval = fn.bind.apply(fn, args);
+//     return () => {
+//         if (result) {
+//             return result;
+//         }
+//         result = lazyEval();
+//         return result;
+//     }
+// }
 
 function edit(page, content, summary)
 {
     return bot.getEditToken().then(response => {
         bot.edit(page, content, summary, {assert: 'bot'});
     }).catch(err => {
+        console.log('-- Session lost, logging in again...'.cyan)
         bot.login({
             apiUrl,
             username: credentials.username,
