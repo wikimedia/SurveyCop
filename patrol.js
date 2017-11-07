@@ -27,7 +27,7 @@ bot.setGlobalRequestOptions({
 // Connect to API.
 log('Connecting to the API'.gray);
 
-bot.loginGetEditToken({
+bot.login({
     apiUrl: apiUrl,
     username: credentials.username,
     password: credentials.password
@@ -45,6 +45,35 @@ bot.loginGetEditToken({
 }).catch((err) => {
     log(`Failed to connect to the API! Error:\n\t${err}`.red);
 });
+
+function lazyEvalMemo(fn)
+{
+    let args = arguments;
+    let result;
+    const lazyEval = fn.bind.apply(fn, args);
+    return () => {
+        if (result) {
+            return result;
+        }
+        result = lazyEval();
+        return result;
+    }
+}
+
+function edit(page, content, summary)
+{
+    return bot.getEditToken().then(response => {
+        bot.edit(page, content, summary, {assert: 'bot'});
+    }).catch(err => {
+        bot.login({
+            apiUrl,
+            username: credentials.username,
+            password: credentials.password
+        }).then(() => {
+            bot.edit(page, content, summary, {assert: 'bot'});
+        });
+    });
+}
 
 // Build and cache page IDs of the Categories.
 function buildCache()
@@ -166,10 +195,10 @@ function untranscludeProposal(category, proposal, editSummary)
     return getContent(categoryPath).then(content => {
         content = content.replace(`\n{{:${fullTitle}}}`, '');
         if (category === 'Untranslated') {
-            bot.update(categoryPath, content, editSummary);
+            edit(categoryPath, content, editSummary);
         } else {
             updateProposalCount(category, content).then(() => {
-                bot.update(categoryPath, content, editSummary);
+                edit(categoryPath, content, editSummary);
             });
         }
     });
@@ -189,14 +218,14 @@ function transcludeProposal(category, proposal)
 
         // updateEditorCount(category);
         if (category === 'Untranslated') {
-            bot.update(
+            edit(
                 categoryPage,
                 content,
                 `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`
             );
         } else {
             updateProposalCount(category, content).then(() => {
-                bot.update(
+                edit(
                     categoryPage,
                     content,
                     `Transcluding proposal "[[${categoryPage}/${proposal}|${proposal}]]"`
@@ -222,7 +251,7 @@ function correctProposalHeaderAndTransclude(category, proposal)
                     `{{:Community Wishlist Survey/Proposal header|1=${captures[1]}}}`,
                     `{{:Community Wishlist Survey/Proposal header|1=${proposal}}}`
                 );
-                bot.edit(
+                edit(
                     proposalPath,
                     content,
                     `Correcting Proposal header template for [[${proposalPath}|${proposal}]]`
@@ -240,7 +269,7 @@ function updateProposalCount(category, content)
     const regex = new RegExp(`{{:${botConfig.survey_root}.*}}`, 'g');
     const count = content.match(regex) ? content.match(regex).length : 0;
     log(`-- Updating proposal count for ${category}`.gray);
-    return bot.edit(
+    return edit(
         `${botConfig.survey_root}/Proposal counts/${category}`,
         count,
         `Updating proposal count for [[${botConfig.survey_root}/${category}|${category}]] (${count})`
