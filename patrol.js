@@ -27,7 +27,7 @@ bot.setGlobalRequestOptions({
 // Connect to API.
 log('Connecting to the API'.gray);
 
-bot.login({
+bot.loginGetEditToken({
     apiUrl: apiUrl,
     username: credentials.username,
     password: credentials.password
@@ -62,20 +62,23 @@ bot.login({
 
 function edit(page, content, summary)
 {
-    const loginAndEdit = () => {
-        console.log('-- Session lost, logging in again...'.cyan);
-        bot.login({
-            apiUrl,
-            username: credentials.username,
-            password: credentials.password
-        }).then(() => {
-            bot.edit(page, content, summary, {assert: 'bot'});
-        });
-    };
+    return bot.getEditToken().edit(page, content, summary, {
+        assert: 'bot'
+    });
+    // const loginAndEdit = () => {
+    //     console.log('-- Session lost, logging in again...'.cyan);
+    //     bot.login({
+    //         apiUrl,
+    //         username: credentials.username,
+    //         password: credentials.password
+    //     }).then(() => {
+    //         return bot.getEditToken().edit(page, content, summary, {assert: 'bot'});
+    //     });
+    // };
 
-    return bot.getEditToken().then(response => {
-        bot.edit(page, content, summary, {assert: 'bot'}).catch(loginAndEdit);
-    }).catch(loginAndEdit);
+    // return bot.getEditToken().then(response => {
+    //     return bot.edit(page, content, summary, {assert: 'bot'}).catch(loginAndEdit);
+    // }).catch(loginAndEdit);
 }
 
 // Build and cache page IDs of the Categories.
@@ -110,7 +113,7 @@ function buildCache()
 
                 if (++count === botConfig.categories.length) {
                     watchSurvey();
-                    connection.end();
+                    // connection.end();
                 }
             }
         );
@@ -158,29 +161,31 @@ function processEvent(data)
     }
 
     // Refresh edit token.
-    if (data.type === 'new') {
-        log(`New proposal added (${category}): `.green + proposal.blue);
-        transcludeProposal(category, proposal);
-    } else if (data.type === 'log' && data.log_type === 'move') {
-        const [newFullTitle, newCategory, newProposal] = getCategoryAndProposal(data.log_params.target);
-        log('Proposal moved: '.magenta + `${proposal.blue} (${category.blue}) ` +
-            `~> ${newProposal.blue} (${newCategory.blue})`);
+    bot.getEditToken().then(response => {
+        if (data.type === 'new') {
+            log(`New proposal added (${category}): `.green + proposal.blue);
+            transcludeProposal(category, proposal);
+        } else if (data.type === 'log' && data.log_type === 'move') {
+            const [newFullTitle, newCategory, newProposal] = getCategoryAndProposal(data.log_params.target);
+            log('Proposal moved: '.magenta + `${proposal.blue} (${category.blue}) ` +
+                `~> ${newProposal.blue} (${newCategory.blue})`);
 
-        const editSummary = `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`;
+            const editSummary = `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`;
 
-        // Remove from old category.
-        untranscludeProposal(category, proposal, editSummary).then(() => {
-            // Correct Proposal header, if needed, then transclude on new category.
-            correctProposalHeaderAndTransclude(newCategory, newProposal);
-        });
-    } else if (data.type === 'log' && data.log_type === 'delete') {
-        log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
-        untranscludeProposal(
-            category,
-            proposal,
-            `Proposal "[[${fullTitle}|${proposal}]]" was deleted.`
-        );
-    }
+            // Remove from old category.
+            untranscludeProposal(category, proposal, editSummary).then(() => {
+                // Correct Proposal header, if needed, then transclude on new category.
+                correctProposalHeaderAndTransclude(newCategory, newProposal);
+            });
+        } else if (data.type === 'log' && data.log_type === 'delete') {
+            log(`Proposal ${proposal} (${category}) deleted. Removing transclusion`.yellow);
+            untranscludeProposal(
+                category,
+                proposal,
+                `Proposal "[[${fullTitle}|${proposal}]]" was deleted.`
+            );
+        }
+    });
 }
 
 function getCategoryAndProposal(pageTitle)
