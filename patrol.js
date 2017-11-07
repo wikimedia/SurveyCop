@@ -83,12 +83,9 @@ function edit(page, content, summary)
     // }).catch(loginAndEdit);
 }
 
-// Build and cache page IDs of the Categories.
-function buildCache()
+// Create connection to replicas.
+function connectToReplicas()
 {
-    log('Building cache of page IDs'.gray);
-
-    // Connect to replicas.
     log('Establishing connection to the replicas'.gray);
     connection = mysql.createConnection({
       host     : credentials.db_host,
@@ -98,6 +95,14 @@ function buildCache()
       database : credentials.db_database
     });
     connection.connect();
+}
+
+// Build and cache page IDs of the Categories.
+function buildCache()
+{
+    log('Building cache of page IDs'.gray);
+
+    connectToReplicas();
 
     let count = 0;
     botConfig.categories.forEach(category => {
@@ -114,8 +119,8 @@ function buildCache()
                 pageIds[category] = results[0].page_id;
 
                 if (++count === botConfig.categories.length) {
+                    connection.end();
                     watchSurvey();
-                    // connection.end();
                 }
             }
         );
@@ -174,6 +179,18 @@ function processEvent(data)
 
             const editSummary = `"${proposal}" moved to [[${newFullTitle}|${newCategory}/${newProposal}]]`;
 
+            if (category === newCategory) {
+                // Just needs renaming on the same category page, and correcting proposal header.
+                return correctProposalHeader(newCategory, newProposal, () => {
+                    const categoryPath = `${botConfig.survey_root}/${newCategory}`;
+
+                    getContent(categoryPath).then(content => {
+                        content = content.replace(`\n{{:${fullTitle}}}`, `\n{{:${newFullTitle}}}`);
+                        return edit(categoryPath, content, editSummary);
+                    });
+                });
+            }
+
             // Remove from old category.
             untranscludeProposal(category, proposal, editSummary).then(() => {
                 // Correct Proposal header, if needed, then transclude on new category.
@@ -203,10 +220,10 @@ function untranscludeProposal(category, proposal, editSummary)
     return getContent(categoryPath).then(content => {
         content = content.replace(`\n{{:${fullTitle}}}`, '');
         if (category === 'Untranslated') {
-            edit(categoryPath, content, editSummary);
+            return edit(categoryPath, content, editSummary);
         } else {
-            updateProposalCount(category, content).then(() => {
-                edit(categoryPath, content, editSummary);
+            return updateProposalCount(category, content).then(() => {
+                return edit(categoryPath, content, editSummary);
             });
         }
     });
@@ -243,14 +260,14 @@ function transcludeProposal(category, proposal)
     });
 }
 
-function correctProposalHeaderAndTransclude(category, proposal)
+function correctProposalHeader(category, proposal, cb)
 {
     const proposalPath = `${botConfig.survey_root}/${category}/${proposal}`;
 
     getContent(proposalPath).then(content => {
         if (content.includes(`{{:Community Wishlist Survey/Proposal header|1=${proposal}}}`)) {
-            // Proposal header is valid, so just need to transclude on new category.
-            transcludeProposal(category, proposal);
+            // Proposal header is valid.
+            cb(category, proposal);
         } else {
             log(`-- Correcting proposal header template for ${proposal}`.gray);
             const captures = content.match(/^{{:Community Wishlist Survey\/Proposal header\|1\=(.*?)}}/);
@@ -264,11 +281,17 @@ function correctProposalHeaderAndTransclude(category, proposal)
                     content,
                     `Correcting Proposal header template for [[${proposalPath}|${proposal}]]`
                 ).then(() => {
-                    // Transclude on new category.
-                    transcludeProposal(category, proposal);
+                    cb(category, proposal);
                 });
             }
         }
+    });
+}
+
+function correctProposalHeaderAndTransclude(category, proposal)
+{
+    correctProposalHeader(category, proposal, () => {
+        transcludeProposal(category, proposal);
     });
 }
 
@@ -286,6 +309,7 @@ function updateProposalCount(category, content)
 
 // function updateEditorCount(category)
 // {
+//     connectToReplicas();
 //     log(`-- Updating editor count for ${category}`.gray);
 //     const underscoredPath = `${botConfig.survey_root}/${category}/`.replace(/ /g, '_');
 //     connection.query(
