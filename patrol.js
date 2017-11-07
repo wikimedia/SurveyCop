@@ -171,7 +171,7 @@ function processEvent(data)
 
     const [fullTitle, category, proposal] = getCategoryAndProposal(data.title);
 
-    const validCategory = botConfig.categories.concat(['Untranslated']).includes(category);
+    const validCategory = botConfig.categories.concat(['Untranslated', 'Archive']).includes(category);
 
     if (!validCategory) {
         return log(`Edit in invalid category -- ${fullTitle}`.yellow);
