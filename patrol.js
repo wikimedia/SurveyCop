@@ -62,8 +62,10 @@ bot.loginGetEditToken({
 
 function edit(page, content, summary)
 {
-    return bot.getEditToken().edit(page, content, summary, {
-        assert: 'bot'
+    return bot.getEditToken().then(() => {
+        return bot.edit(page, content, summary, {
+            assert: 'bot'
+        });
     });
     // const loginAndEdit = () => {
     //     console.log('-- Session lost, logging in again...'.cyan);
