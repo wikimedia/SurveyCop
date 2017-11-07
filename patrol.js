@@ -27,7 +27,7 @@ bot.setGlobalRequestOptions({
 // Connect to API.
 log('Connecting to the API'.gray);
 
-bot.loginGetEditToken({
+bot.login({
     apiUrl: apiUrl,
     username: credentials.username,
     password: credentials.password
@@ -60,27 +60,37 @@ bot.loginGetEditToken({
 //     }
 // }
 
-function edit(page, content, summary)
+function edit(page, content, summary, failSafe = 0)
 {
-    return bot.getEditToken().then(() => {
-        return bot.edit(page, content, summary, {
-            assert: 'bot'
-        });
-    });
-    // const loginAndEdit = () => {
-    //     console.log('-- Session lost, logging in again...'.cyan);
-    //     bot.login({
-    //         apiUrl,
-    //         username: credentials.username,
-    //         password: credentials.password
-    //     }).then(() => {
-    //         return bot.getEditToken().edit(page, content, summary, {assert: 'bot'});
-    //     });
-    // };
+    if (failSafe > 3) {
+        return log(`-- Tried to login too many times!`.red);
+    }
 
-    // return bot.getEditToken().then(response => {
-    //     return bot.edit(page, content, summary, {assert: 'bot'}).catch(loginAndEdit);
-    // }).catch(loginAndEdit);
+    return bot.edit(page, content, summary, {assert: 'bot'}).catch(err => {
+        const error = err.response && err.response.error ? err.response.error.code : null;
+
+        if (error === 'badtoken') {
+            console.log('-- Edit token invalid, refreshing...'.cyan);
+
+            // Edit token invalid. Remove from bot instance and re-try.
+            bot.editToken = null;
+            bot.getEditToken().then(() => {
+                edit(page, content, summary, failSafe + 1);
+            });
+        } else if (error === 'assertbotfailed') {
+            console.log('-- Login session died, creating new bot instance...'.cyan);
+
+            // Login session died. Login and try again.
+            bot = new MWBot();
+            bot.login({
+                apiUrl: apiUrl,
+                username: credentials.username,
+                password: credentials.password
+            }).then(() => {
+                edit(page, content, summary, failSafe + 1);
+            });
+        }
+    });
 }
 
 // Create connection to replicas.
