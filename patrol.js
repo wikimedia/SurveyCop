@@ -34,6 +34,14 @@ bot.login({
 }).then(() => {
     log('API connection successful'.green);
 
+    // Now that we're logged in as a bot, we can make the assertion on every edit.
+    bot.setGlobalRequestOptions({
+        form: {
+            assert: 'bot',
+            bot: true
+        }
+    });
+
     // edit('User:Community Tech bot/Test', 'adkfjaksjflaksjdflkasfd', 'Test');
 
     log('Loading config...'.gray);
