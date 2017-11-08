@@ -34,13 +34,7 @@ bot.login({
 }).then(() => {
     log('API connection successful'.green);
 
-    // Now that we're logged in as a bot, we can make the assertion on every edit.
-    bot.setGlobalRequestOptions({
-        form: {
-            assert: 'bot',
-            bot: true
-        }
-    });
+    // edit('User:Community Tech bot/Test', 'adkfjaksjflaksjdflkasfd', 'Test');
 
     log('Loading config...'.gray);
 
@@ -82,19 +76,36 @@ function edit(page, content, summary, failSafe = 0)
             // Edit token invalid. Remove from bot instance and re-try.
             bot.editToken = null;
             return bot.getEditToken().then(() => {
-                return bot.edit(page, content, summary);
+                return bot.edit(page, content, summary, {
+                    form: {
+                        assert: 'bot',
+                        bot: true
+                    }
+                });
             });
         } else if (error === 'assertbotfailed') {
             log('-- Login session died, creating new bot instance...'.cyan);
 
             // Login session died. Login and try again.
             bot = new MWBot();
-            return bot.login({
+            bot.setGlobalRequestOptions({
+                headers: {
+                    'User-Agent': 'Community Tech bot on Node.js',
+                    timeout: 8000
+                }
+            });
+
+            return bot.loginGetEditToken({
                 apiUrl: apiUrl,
                 username: credentials.username,
                 password: credentials.password
             }).then(() => {
-                return bot.edit(page, content, summary);
+                return bot.edit(page, content, summary, {
+                    form: {
+                        assert: 'bot',
+                        bot: true
+                    }
+                });
             }).catch(err => {
                 log('Login failed!'.red);
             });
