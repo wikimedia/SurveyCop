@@ -73,7 +73,7 @@ function edit(page, content, summary, failSafe = 0)
             // Edit token invalid. Remove from bot instance and re-try.
             bot.editToken = null;
             return bot.getEditToken().then(() => {
-                return bot.edit(page, content, summary);
+                return bot.edit(page, content, summary, {assert: 'bot', bot: true});
             });
         } else if (error === 'assertbotfailed') {
             log('-- Login session died, creating new bot instance...'.cyan);
