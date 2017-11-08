@@ -70,7 +70,7 @@ function edit(page, content, summary, failSafe = 0)
         const error = err.response && err.response.error ? err.response.error.code : null;
 
         if (error === 'badtoken') {
-            console.log('-- Edit token invalid, refreshing...'.cyan);
+            log('-- Edit token invalid, refreshing...'.cyan);
 
             // Edit token invalid. Remove from bot instance and re-try.
             bot.editToken = null;
@@ -78,7 +78,7 @@ function edit(page, content, summary, failSafe = 0)
                 edit(page, content, summary, failSafe + 1);
             });
         } else if (error === 'assertbotfailed') {
-            console.log('-- Login session died, creating new bot instance...'.cyan);
+            log('-- Login session died, creating new bot instance...'.cyan);
 
             // Login session died. Login and try again.
             bot = new MWBot();
