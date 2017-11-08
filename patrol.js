@@ -119,6 +119,8 @@ function edit(page, content, summary, failSafe = 0)
             });
         } else {
             log(`-- Unhandled error when trying to edit! Error code: ${error}`.red);
+            log(`>>> Terminating application to force a restart...`.red);
+            process.exit(1);
         }
     });
 }
@@ -379,6 +381,8 @@ function getContent(pageTitle)
         return response.query.pages[pageId].revisions[0]['*'];
     }).catch((err) => {
         log(`Failed to read page ${pageTitle}! Error:\n\t${err}`.red);
+        log(`>>> Terminating application to force a restart...`.red);
+        process.exit(1);
     });
 }
 
