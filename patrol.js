@@ -62,9 +62,7 @@ bot.login({
 
 function edit(page, content, summary, failSafe = 0)
 {
-    if (failSafe > 3) {
-        return log(`-- Tried to login too many times!`.red);
-    }
+    log(`Attempting to edit ${page}...`.cyan);
 
     return bot.edit(page, content, summary, {assert: 'bot'}).catch(err => {
         const error = err.response && err.response.error ? err.response.error.code : null;
@@ -74,21 +72,25 @@ function edit(page, content, summary, failSafe = 0)
 
             // Edit token invalid. Remove from bot instance and re-try.
             bot.editToken = null;
-            bot.getEditToken().then(() => {
-                edit(page, content, summary, failSafe + 1);
+            return bot.getEditToken().then(() => {
+                return bot.edit(page, content, summary);
             });
         } else if (error === 'assertbotfailed') {
             log('-- Login session died, creating new bot instance...'.cyan);
 
             // Login session died. Login and try again.
             bot = new MWBot();
-            bot.login({
+            return bot.login({
                 apiUrl: apiUrl,
                 username: credentials.username,
                 password: credentials.password
             }).then(() => {
-                edit(page, content, summary, failSafe + 1);
+                return bot.edit(page, content, summary);
+            }).catch(err => {
+                log('Login failed!'.red);
             });
+        } else {
+            log(`-- Unhandled error when trying to edit! Error code: ${error}`.red);
         }
     });
 }
