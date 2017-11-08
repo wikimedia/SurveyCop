@@ -21,10 +21,6 @@ bot.setGlobalRequestOptions({
     headers: {
         'User-Agent': 'Community Tech bot on Node.js',
         timeout: 8000
-    },
-    form: {
-        assert: 'bot',
-        bot: true
     }
 });
 
@@ -37,6 +33,15 @@ bot.login({
     password: credentials.password
 }).then(() => {
     log('API connection successful'.green);
+
+    // Now that we're logged in as a bot, we can make the assertion on every edit.
+    bot.setGlobalRequestOptions({
+        form: {
+            assert: 'bot',
+            bot: true
+        }
+    });
+
     log('Loading config...'.gray);
 
     getContent('User:Community Tech bot/WishlistSurvey/config').then(content => {
