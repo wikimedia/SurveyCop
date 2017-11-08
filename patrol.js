@@ -22,6 +22,10 @@ bot.setGlobalRequestOptions({
         'User-Agent': 'Community Tech bot on Node.js',
         timeout: 8000
     },
+    form: {
+        assert: 'bot',
+        bot: true
+    }
 });
 
 // Connect to API.
@@ -64,7 +68,7 @@ function edit(page, content, summary, failSafe = 0)
 {
     log(`Attempting to edit ${page}...`.cyan);
 
-    return bot.edit(page, content, summary, {assert: 'bot', bot: true}).catch(err => {
+    return bot.edit(page, content, summary).catch(err => {
         const error = err.response && err.response.error ? err.response.error.code : null;
 
         if (error === 'badtoken') {
@@ -73,7 +77,7 @@ function edit(page, content, summary, failSafe = 0)
             // Edit token invalid. Remove from bot instance and re-try.
             bot.editToken = null;
             return bot.getEditToken().then(() => {
-                return bot.edit(page, content, summary, {assert: 'bot', bot: true});
+                return bot.edit(page, content, summary);
             });
         } else if (error === 'assertbotfailed') {
             log('-- Login session died, creating new bot instance...'.cyan);
