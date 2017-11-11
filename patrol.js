@@ -187,6 +187,11 @@ function watchSurvey()
 
         if (data.wiki === 'metawiki' && data.title.startsWith(`${botConfig.survey_root}/`)) {
             processEvent(data);
+        } else if (new Date().getTime() % (60 * 60 * 1000) < 1000) {
+            console.log(new Date().getTime() % (60 * 60 * 1000) < 1000);
+            // Attempt to restart every hour. Super hacky... but whatever...
+            log(`>>> Terminating application to force a restart...`.red);
+            process.exit(1);
         }
     };
 }
