@@ -1,16 +1,24 @@
 ---
 # Run community-tech-bot SurveyCop on kubernetes
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: community-tech-tools.bot
-  namespace: community-tech-tools
+  namespace: tool-community-tech-tools
+  labels:
+    name: community-tech-tools.bot
+    toolforge: tool
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: community-tech-tools.bot
+      toolforge: tool
   template:
     metadata:
       labels:
         name: community-tech-tools.bot
+        toolforge: tool
     spec:
       containers:
         - name: bot
@@ -28,3 +36,4 @@ spec:
         - name: home
           hostPath:
             path: /data/project/community-tech-tools/SurveyCop
+
