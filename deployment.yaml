@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: bot
-          image: docker-registry.tools.wmflabs.org/toollabs-nodejs-base:latest
+          image: docker-registry.tools.wmflabs.org/toolforge-node10-sssd-base:latest
           command: [ "/data/project/community-tech-tools/SurveyCop/patrol.js" ]
           workingDir: /data/project/community-tech-tools/SurveyCop
           env:
