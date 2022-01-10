@@ -312,16 +312,16 @@ function correctProposalHeader(category, proposal, cb)
     const proposalPath = `${botConfig.survey_root}/${category}/${proposal}`;
 
     getContent(proposalPath).then(content => {
-        if (content.includes(`{{:Community Wishlist Survey/Proposal header|1=${proposal}}}`)) {
+        if (content.includes(`{{Community Wishlist Survey/Proposal header|1=${proposal}}}`)) {
             // Proposal header is valid.
             cb(category, proposal);
         } else {
             log(`-- Correcting proposal header template for ${proposal}`.gray);
-            const captures = content.match(/^{{:Community Wishlist Survey\/Proposal header\|1\=(.*?)}}/);
+            const captures = content.match(/^{{Community Wishlist Survey\/Proposal header\|1\=(.*?)}}/);
             if (captures) {
                 content = content.replace(
-                    `{{:Community Wishlist Survey/Proposal header|1=${captures[1]}}}`,
-                    `{{:Community Wishlist Survey/Proposal header|1=${proposal}}}`
+                    `{{Community Wishlist Survey/Proposal header|1=${captures[1]}}}`,
+                    `{{Community Wishlist Survey/Proposal header|1=${proposal}}}`
                 );
                 edit(
                     proposalPath,
