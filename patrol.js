@@ -48,6 +48,7 @@ bot.login({
 
     getContent('User:Community Tech bot/WishlistSurvey/config').then(content => {
         botConfig = JSON.parse(content);
+        botConfig.categories.push('Larger suggestions');
         log('Bot configuration loaded.'.green);
         buildCache();
     }).catch((err) => {
