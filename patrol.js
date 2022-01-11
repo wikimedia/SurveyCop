@@ -205,7 +205,7 @@ function processEvent(data)
     }
 
     // Don't transclude translation pages.
-    if (languageCodes.includes(data.title.split('/').slice(-1))) {
+    if (languageCodes.includes(data.title.split('/').pop())) {
         return;
     }
 
