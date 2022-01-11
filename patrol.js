@@ -16,6 +16,7 @@ let botConfig;
 let bot = new MWBot();
 let pageIds = {}; // For the categories.
 let connection; // MySQL connection.
+let languageCodes = [];
 
 bot.setGlobalRequestOptions({
     headers: {
@@ -42,7 +43,17 @@ bot.login({
         }
     });
 
-    // edit('User:Community Tech bot/Test', 'adkfjaksjflaksjdflkasfd', 'Test');
+    log('Loading site languages...'.gray);
+    bot.request({
+        action: 'query',
+        meta: 'siteinfo',
+        siprop: 'languages',
+        formatversion: 2
+    }).then(response => {
+        languageCodes = response.query.languages.map(l => l.code);
+    }).catch(err => {
+        log(`Failed to site languages! Error:\n\t${err}`.red);
+    });
 
     log('Loading config...'.gray);
 
@@ -57,20 +68,6 @@ bot.login({
 }).catch((err) => {
     log(`Failed to connect to the API! Error:\n\t${err}`.red);
 });
-
-// function lazyEvalMemo(fn)
-// {
-//     let args = arguments;
-//     let result;
-//     const lazyEval = fn.bind.apply(fn, args);
-//     return () => {
-//         if (result) {
-//             return result;
-//         }
-//         result = lazyEval();
-//         return result;
-//     }
-// }
 
 function edit(page, content, summary, failSafe = 0)
 {
@@ -204,6 +201,11 @@ function processEvent(data)
     }
 
     if (data.title.split('/').length <= 2) {
+        return;
+    }
+
+    // Don't transclude translation pages.
+    if (languageCodes.includes(data.title.split('/').slice(-1))) {
         return;
     }
 
