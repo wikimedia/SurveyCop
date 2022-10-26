@@ -147,11 +147,12 @@ function buildCache()
     let count = 0;
     botConfig.categories.forEach(category => {
         const categoryPath = `${botConfig.survey_root}/${category}`.replace(/ /g, '_');
+        const namespace = /^User:/.test(botConfig.survey_root) ? 2 : 0;
         connection.query(
             `SELECT page_id
              FROM page
              WHERE page_title = '${categoryPath}'
-             AND page_namespace = 0`,
+             AND page_namespace = ${namespace}`,
             function (error, results, fields) {
                 if (error) {
                     throw error;
