@@ -145,9 +145,12 @@ function buildCache()
     connectToReplicas();
 
     let count = 0;
+    const namespace = /^User:/.test(botConfig.survey_root) ? 2 : 0;
     botConfig.categories.forEach(category => {
-        const categoryPath = `${botConfig.survey_root}/${category}`.replace(/ /g, '_');
-        const namespace = /^User:/.test(botConfig.survey_root) ? 2 : 0;
+        let categoryPath = `${botConfig.survey_root}/${category}`.replace(/ /g, '_');
+        if (namespace === 2) {
+            categoryPath = categoryPath.replace(/^User:/, '');
+        }
         connection.query(
             `SELECT page_id
              FROM page
@@ -212,7 +215,7 @@ function processEvent(data)
 
     const [fullTitle, category, proposal] = getCategoryAndProposal(data.title);
 
-    const validCategory = botConfig.categories.concat(['Untranslated', 'Archive']).includes(category);
+    const validCategory = botConfig.categories.concat(['Untranslated', 'Archive', 'Larger_suggestions']).includes(category);
 
     if (!validCategory) {
         return log(`Edit in invalid category -- ${fullTitle}`.yellow);
@@ -260,7 +263,11 @@ function processEvent(data)
 
 function getCategoryAndProposal(pageTitle)
 {
-    return /.*?\/(.*?)\/(.*?)$/.exec(pageTitle);
+    if (/^User:/.test(botConfig.survey_root)) {
+        return /.*?\/.*?\/(.*?)\/(.*?)$/.exec(pageTitle);
+    } else {
+        return /.*?\/(.*?)\/(.*?)$/.exec(pageTitle);
+    }
 }
 
 function untranscludeProposal(category, proposal, editSummary)
