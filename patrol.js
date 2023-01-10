@@ -328,7 +328,7 @@ function correctProposalHeader(category, proposal, cb)
             cb(category, proposal);
         } else {
             log(`-- Correcting proposal header template for ${proposal}`.gray);
-            const captures = content.match(/^{{Community Wishlist Survey\/Proposal header\|1\=(.*?)}}/);
+            const captures = content.match(/^{{Community Wishlist Survey\/Proposal header\|1=(.*?)}}/);
             if (captures) {
                 content = content.replace(
                     `{{Community Wishlist Survey/Proposal header|1=${captures[1]}}}`,
@@ -341,6 +341,8 @@ function correctProposalHeader(category, proposal, cb)
                 ).then(() => {
                     cb(category, proposal);
                 });
+            } else {
+                log(`-- Proposal header template for ${proposal} could not be parsed!`.red);
             }
         }
     });
