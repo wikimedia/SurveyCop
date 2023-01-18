@@ -209,7 +209,7 @@ function processEvent(data)
     }
 
     // Don't transclude translation pages.
-    if (languageCodes.includes(data.title.split('/').pop())) {
+    if (languageCodes.includes(data.title.split('/').pop()) || data.title.endsWith('/Proposal')) {
         return;
     }
 
